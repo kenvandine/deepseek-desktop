@@ -1,0 +1,85 @@
+<!-- about.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Ubuntu', sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .about-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            text-align: center;
+        }
+        .about-header {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .about-content {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .about-footer {
+            font-size: 14px;
+            color: #888;
+        }
+        .btn-close {
+            background-color: #0078D7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-close:hover {
+            background-color: #005A9E;
+        }
+    </style>
+</head>
+<body>
+    <div class="about-container">
+	<div class="about-header"><span id="app-title"></span></div>
+	<div class="about-content">Version <span id="app-version"></span><br>By <span id="app-author"></span></div>
+	<div class="about-content"><a target="_new" href="@@BUGURL@@">File a bug</a><br></div>
+        <button class="btn-close" onclick="window.close();">Close</button>
+    </div>
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        // Receive metadata from main process
+        ipcRenderer.on('app-version', (event, version) => {
+            document.getElementById('app-version').innerText = version;
+        });
+        ipcRenderer.on('app-title', (event, title) => {
+            document.getElementById('app-title').innerText = title;
+        });
+        ipcRenderer.on('app-author', (event, author) => {
+            document.getElementById('app-author').innerText = author;
+        });
+        ipcRenderer.on('app-bugs-url', (event, url) => {
+            document.querySelectorAll(`a[href="@@BUGURL@@"]`).forEach(anchor => {
+                anchor.href = url;
+            });
+        });
+
+        // Request metadata from main process
+        window.onload = () => {
+            ipcRenderer.send('get-app-metadata');
+        }
+    </script>
+</body>
+</html>

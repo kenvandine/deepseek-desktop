@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=DeepSeek
+Comment=DeepSeek AI
+Type=Application
+Exec=deepseek-desktop
+Icon=${SNAP}/unpacked/resources/app/icon.png
+Categories=Accessories;
+Keywords=AI;Copilot;GPT;ChatGPT;Gemini;DeepSeek;

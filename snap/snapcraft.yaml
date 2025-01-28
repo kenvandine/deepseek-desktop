@@ -1,0 +1,85 @@
+name: deepseek-desktop
+summary: DeepSeek Desktop
+version: 0.0.1
+description: |
+  Unofficial Web app for DeepSeek providing the desktop user
+  experience you would expect on Ubuntu or any other Linux desktop
+
+  For microphone access you need to connect the audio-record interface:
+
+    sudo snap connect deepseek-desktop:audio-record
+
+adopt-info: deepseek-desktop
+grade: stable
+confinement: strict
+base: core24
+contact: https://github.com/kenvandine/deepseek-desktop/issues
+issues: https://github.com/kenvandine/deepseek-desktop/issues
+website: https://github.com/kenvandine/deepseek-desktop
+license: GPL-3.0+
+icon: icon.png
+
+platforms:
+  amd64:
+  arm64:
+compression: lzo
+
+parts:
+  deepseek-desktop:
+    plugin: nil
+    source: .
+    build-packages:
+      - npm
+      - git
+    override-pull: |
+      craftctl default
+      VERSION=$(craftctl get version)
+      if [ -z $VERSION ]; then
+        VERSION=$(git describe --tags --abbrev=10)
+        craftctl set version=$VERSION
+      fi
+      sed -i.bak -e "s|@@VERSION@@|$VERSION|g" $CRAFT_PART_SRC/package.json
+    override-build: |
+      npm install
+      npm run build
+      mkdir -p $SNAPCRAFT_PART_INSTALL/unpacked
+      cp $SNAPCRAFT_PROJECT_DIR/com.github.kenvandine.deepseek-desktop.desktop $SNAPCRAFT_PART_INSTALL/unpacked/
+      cp $SNAPCRAFT_PROJECT_DIR/icon.png $SNAPCRAFT_PART_INSTALL/
+      mv dist/linux*-unpacked/* $SNAPCRAFT_PART_INSTALL/unpacked 
+    prime:
+      - unpacked
+      - icon.png
+      - -*/chrome-sandbox
+      - -*/resources/app.asar.unpacked/node_modules/sharp/vendor/lib
+      - -*/resources/app.asar.unpacked/node_modules/sharp/vendor/include
+
+  cleanup:
+    after: [ deepseek-desktop ]
+    plugin: nil
+    build-snaps: [ gnome-46-2404 ]
+    override-prime: |
+        set -eux
+        cd /snap/gnome-46-2404/current
+        find . -type f,l -exec rm -f $SNAPCRAFT_PRIME/{} \;
+
+plugs:
+  shmem:
+    interface: shared-memory
+    private: true
+
+apps:
+  deepseek-desktop:
+    extensions: [gnome]
+    desktop: unpacked/com.github.kenvandine.deepseek-desktop.desktop
+    command: unpacked/deepseek-desktop --use-tray-icon --no-sandbox --disable-seccomp-filter-sandbox
+    plugs:
+      - audio-playback
+      - audio-record
+      - home
+      - network
+      - shmem
+      - unity7
+    environment:
+      GTK_USE_PORTAL: "1"
+      TMPDIR: $XDG_RUNTIME_DIR
+      HOME: $SNAP_REAL_HOME

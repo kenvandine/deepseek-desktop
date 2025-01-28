@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - DeepSeek</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #f3f2f1;
+            color: #323130;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background: #ffffff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            font-size: 2em;
+            color: #0078D4;
+        }
+        p {
+            margin: 20px 0;
+        }
+        .retry-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: white;
+            background: #0078D4;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .retry-btn:hover {
+            background: #005A9E;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>You're Offline</h1>
+        <p>It looks like you're not connected to the internet. Please check your network connection and try again.</p>
+        <button class="retry-btn" onclick="location.reload()">Retry</button>
+    </div>
+</body>
+</html>
