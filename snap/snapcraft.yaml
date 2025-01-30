@@ -1,6 +1,5 @@
 name: deepseek-desktop
 summary: DeepSeek Desktop
-version: 0.0.1
 description: |
   Unofficial Web app for DeepSeek providing the desktop user
   experience you would expect on Ubuntu or any other Linux desktop
