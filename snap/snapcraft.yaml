@@ -101,7 +101,6 @@ apps:
       - home
       - network
       - shmem
-      - browser-support
     environment:
       GTK_USE_PORTAL: 0
       HOME: $SNAP_REAL_HOME
