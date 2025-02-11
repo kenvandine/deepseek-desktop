@@ -1,0 +1,8 @@
+#!/bin/bash
+
+WAYLAND_OPTS="--enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime"
+
+exec $SNAP/unpacked/deepseek-desktop \
+	--disable-dev-shm-usage \
+	$WAYLAND_OPTS \
+	--no-sandbox "$@"

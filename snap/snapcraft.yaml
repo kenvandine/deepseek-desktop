@@ -52,6 +52,13 @@ parts:
       - -*/resources/app.asar.unpacked/node_modules/sharp/vendor/lib
       - -*/resources/app.asar.unpacked/node_modules/sharp/vendor/include
 
+  launcher:
+    plugin: dump
+    source: launcher
+    override-build: |
+      cp launcher $CRAFT_PART_INSTALL/
+      cp daemon $CRAFT_PART_INSTALL/
+
   cleanup:
     after: [ deepseek-desktop ]
     plugin: nil
@@ -70,7 +77,7 @@ apps:
   deepseek-desktop:
     extensions: [gnome]
     desktop: unpacked/com.github.kenvandine.deepseek-desktop.desktop
-    command: unpacked/deepseek-desktop --use-tray-icon --no-sandbox --disable-seccomp-filter-sandbox
+    command: launcher
     plugs:
       - audio-playback
       - audio-record
@@ -81,4 +88,20 @@ apps:
     environment:
       GTK_USE_PORTAL: "1"
       TMPDIR: $XDG_RUNTIME_DIR
+      HOME: $SNAP_REAL_HOME
+  daemon:
+    extensions: [gnome]
+    daemon: simple
+    restart-delay: 3s
+    install-mode: disable
+    command: daemon
+    plugs:
+      - audio-playback
+      - audio-record
+      - home
+      - network
+      - shmem
+      - browser-support
+    environment:
+      GTK_USE_PORTAL: 0
       HOME: $SNAP_REAL_HOME

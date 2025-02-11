@@ -1,0 +1,12 @@
+#!/bin/sh
+set -ex
+
+daemon="$(snapctl get daemon)"
+
+if [ "$daemon" = "true" ]; then
+    if snapctl services "$SNAP_INSTANCE_NAME.daemon" | grep -q inactive; then
+       snapctl start --enable "$SNAP_INSTANCE_NAME.daemon" 2>&1 || true
+    fi
+else
+    snapctl stop --disable "$SNAP_INSTANCE_NAME.daemon" 2>&1 || true
+fi
