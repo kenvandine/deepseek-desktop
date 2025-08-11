@@ -68,6 +68,23 @@ function createWindow () {
   tray.setToolTip('DeepSeek');
   tray.setContextMenu(contextMenu);
 
+  ipcMain.on('zoom-in', () => {
+    console.log('zoom-in');
+    const currentZoom = win.webContents.getZoomLevel();
+    win.webContents.setZoomLevel(currentZoom + 1);
+  });
+
+  ipcMain.on('zoom-out', () => {
+    console.log('zoom-out');
+    const currentZoom = win.webContents.getZoomLevel();
+    win.webContents.setZoomLevel(currentZoom - 1);
+  });
+
+  ipcMain.on('zoom-reset', () => {
+    console.log('zoom-reset');
+    win.webContents.setZoomLevel(0);
+  });
+
   ipcMain.on('log-message', (event, message) => {
     console.log('Log from preload: ', message);
   });

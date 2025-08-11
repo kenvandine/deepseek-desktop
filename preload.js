@@ -10,3 +10,28 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Handle keyboard shortcuts for zoom
+document.addEventListener('keydown', (event) => {
+    if (event.ctrlKey) {
+        if (event.key === '+') {
+            ipcRenderer.send('zoom-in');
+        } else if (event.key === '-') {
+            ipcRenderer.send('zoom-out');
+        } else if (event.key === '0') {
+            ipcRenderer.send('zoom-reset');
+        }
+    }
+});
+
+// Handle mouse wheel zoom
+document.addEventListener('wheel', (event) => {
+    if (event.ctrlKey) {
+        event.preventDefault(); // Prevent default scrolling
+        if (event.deltaY < 0) {
+            ipcRenderer.send('zoom-in');
+        } else {
+            ipcRenderer.send('zoom-out');
+        }
+    }
+});
