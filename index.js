@@ -1,10 +1,218 @@
 const { app, BrowserWindow, screen, Tray, Menu, nativeImage, ipcMain, shell } = require('electron');
 const { join } = require('path');
 const fs = require('fs');
+const https = require('https');
 
 let tray = null;
 let win = null;
-const appURL = 'https://chat.deepseek.com'
+let settingsWindow = null;
+const appURL = 'https://chat.deepseek.com';
+const settingsPath = join(app.getPath('userData'), 'api-settings.json');
+
+// Armazenar configurações da API
+let apiSettings = {
+  provider: null,
+  apiKey: null,
+  model: null
+};
+
+// Carregar configurações salvas
+function loadApiSettings() {
+  try {
+    if (fs.existsSync(settingsPath)) {
+      const data = fs.readFileSync(settingsPath, 'utf8');
+      apiSettings = JSON.parse(data);
+      console.log('API Settings loaded:', { provider: apiSettings.provider, model: apiSettings.model });
+    }
+  } catch (error) {
+    console.error('Error loading API settings:', error);
+  }
+}
+
+// Salvar configurações
+function saveApiSettings(settings) {
+  try {
+    apiSettings = settings;
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+    console.log('API Settings saved:', { provider: settings.provider, model: settings.model });
+  } catch (error) {
+    console.error('Error saving API settings:', error);
+  }
+}
+
+// Fazer requisição HTTPS
+function makeHttpsRequest(options, postData = null) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        try {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(JSON.parse(data));
+          } else {
+            reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+          }
+        } catch (error) {
+          reject(new Error(`Failed to parse response: ${error.message}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    if (postData) {
+      req.write(JSON.stringify(postData));
+    }
+
+    req.end();
+  });
+}
+
+// Buscar modelos do Groq
+async function fetchGroqModels(apiKey) {
+  const options = {
+    hostname: 'api.groq.com',
+    path: '/openai/v1/models',
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  };
+
+  try {
+    const response = await makeHttpsRequest(options);
+    return response.data.map(model => model.id);
+  } catch (error) {
+    throw new Error(`Erro ao buscar modelos do Groq: ${error.message}`);
+  }
+}
+
+// Buscar modelos do DeepSeek
+async function fetchDeepSeekModels(apiKey) {
+  const options = {
+    hostname: 'api.deepseek.com',
+    path: '/models',
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  };
+
+  try {
+    const response = await makeHttpsRequest(options);
+    return response.data.map(model => model.id);
+  } catch (error) {
+    // Se a API não suportar listagem de modelos, retornar modelos padrão
+    console.log('Usando modelos padrão do DeepSeek');
+    return ['deepseek-chat', 'deepseek-coder'];
+  }
+}
+
+// Testar conexão com API e buscar modelos
+async function testApiConnection(provider, apiKey) {
+  try {
+    let models = [];
+
+    if (provider === 'groq') {
+      models = await fetchGroqModels(apiKey);
+    } else if (provider === 'deepseek') {
+      models = await fetchDeepSeekModels(apiKey);
+    }
+
+    return { success: true, models };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// Enviar mensagem para API
+async function sendChatMessage(settings, messages) {
+  try {
+    let hostname, path;
+
+    if (settings.provider === 'groq') {
+      hostname = 'api.groq.com';
+      path = '/openai/v1/chat/completions';
+    } else if (settings.provider === 'deepseek') {
+      hostname = 'api.deepseek.com';
+      path = '/chat/completions';
+    }
+
+    const options = {
+      hostname,
+      path,
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${settings.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    };
+
+    const postData = {
+      model: settings.model,
+      messages: messages,
+      stream: false
+    };
+
+    const response = await makeHttpsRequest(options, postData);
+
+    if (response.choices && response.choices.length > 0) {
+      return {
+        success: true,
+        message: response.choices[0].message.content
+      };
+    } else {
+      return {
+        success: false,
+        error: 'Resposta inválida da API'
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// Criar janela de configurações
+function createSettingsWindow() {
+  if (settingsWindow) {
+    settingsWindow.focus();
+    return;
+  }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { x, y, width, height } = primaryDisplay.bounds;
+
+  settingsWindow = new BrowserWindow({
+    width: 700,
+    height: 700,
+    x: x + ((width - 700) / 2),
+    y: y + ((height - 700) / 2),
+    title: 'Configurações',
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  settingsWindow.loadFile('settings.html');
+  settingsWindow.removeMenu();
+
+  settingsWindow.on('closed', () => {
+    settingsWindow = null;
+  });
+}
 
 function createWindow () {
   const primaryDisplay = screen.getPrimaryDisplay();
@@ -48,6 +256,14 @@ function createWindow () {
         } else {
           win.show();
         }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Configurações da API',
+      click: () => {
+        console.log("Settings clicked");
+        createSettingsWindow();
       }
     },
     { type: 'separator' },
@@ -100,14 +316,14 @@ function createWindow () {
     console.log(`Network status: ${isOnline ? 'online' : 'offline'}`);
     console.log("network-status changed: " + isOnline);
     if (isOnline) {
-      win.loadURL(appURL);
+      // Não fazer nada, deixar o usuário escolher
     } else {
       win.loadFile('offline.html');
     }
   });
 
-  //win.loadFile(join(__dirname, 'index.html'));
-  win.loadURL(appURL);
+  // Carregar página inicial ao invés do chat web
+  win.loadFile(join(__dirname, 'index.html'));
 
   // Link clicks open new windows, let's force them to open links in
   // the default browser
@@ -203,7 +419,49 @@ ipcMain.on('get-app-metadata', (event) => {
     event.sender.send('app-author', appAuthor);
 });
 
-app.whenReady().then(createWindow);
+// IPC handlers para API
+ipcMain.on('get-api-settings', (event) => {
+  event.reply('api-settings', apiSettings);
+});
+
+ipcMain.on('save-api-settings', (event, settings) => {
+  saveApiSettings(settings);
+  event.reply('api-settings-saved', { success: true });
+});
+
+ipcMain.handle('test-api-connection', async (event, { provider, apiKey }) => {
+  return await testApiConnection(provider, apiKey);
+});
+
+ipcMain.handle('send-chat-message', async (event, { settings, messages }) => {
+  return await sendChatMessage(settings, messages);
+});
+
+ipcMain.on('start-chat', (event) => {
+  if (win) {
+    win.loadFile('chat.html');
+    win.show();
+  }
+  if (settingsWindow) {
+    settingsWindow.close();
+  }
+});
+
+ipcMain.on('open-settings', (event) => {
+  createSettingsWindow();
+});
+
+ipcMain.on('load-web-interface', (event) => {
+  if (win) {
+    win.loadURL(appURL);
+    win.show();
+  }
+});
+
+app.whenReady().then(() => {
+  loadApiSettings();
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   console.log("window-all-closed");

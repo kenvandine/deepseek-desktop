@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - DeepSeek Desktop</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Ubuntu, Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        select, input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .models-container {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            background: #f8f9fa;
+        }
+
+        .model-option {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .model-option:hover {
+            background: #e9ecef;
+        }
+
+        .model-option input[type="radio"] {
+            margin-right: 10px;
+            width: auto;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ Configurações</h1>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <div class="form-group">
+            <label for="apiProvider">Provedor de API</label>
+            <select id="apiProvider">
+                <option value="">Selecione um provedor...</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="groq">Groq</option>
+            </select>
+            <div class="info-text">Escolha entre DeepSeek ou Groq como provedor de IA</div>
+        </div>
+
+        <div class="form-group">
+            <label for="apiKey">Chave da API</label>
+            <input type="password" id="apiKey" placeholder="Cole sua chave de API aqui...">
+            <div class="info-text" id="apiInfo">Digite sua chave de API do provedor selecionado</div>
+        </div>
+
+        <div class="form-group">
+            <button id="testApiBtn" class="btn-secondary">🔍 Testar Conexão e Buscar Modelos</button>
+        </div>
+
+        <div class="form-group" id="modelsSection" style="display: none;">
+            <label for="modelSelect">Modelo Disponível</label>
+            <div id="modelsList" class="models-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Carregando modelos...
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <button id="saveBtn" class="btn-primary">💾 Salvar Configurações</button>
+            <button id="startChatBtn" class="btn-success" style="display: none;">🚀 Iniciar Chat</button>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        const apiProviderSelect = document.getElementById('apiProvider');
+        const apiKeyInput = document.getElementById('apiKey');
+        const testApiBtn = document.getElementById('testApiBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const startChatBtn = document.getElementById('startChatBtn');
+        const modelsSection = document.getElementById('modelsSection');
+        const modelsList = document.getElementById('modelsList');
+        const statusMessage = document.getElementById('statusMessage');
+        const apiInfo = document.getElementById('apiInfo');
+
+        let selectedModel = null;
+        let availableModels = [];
+
+        // Carregar configurações salvas
+        function loadSettings() {
+            ipcRenderer.send('get-api-settings');
+        }
+
+        ipcRenderer.on('api-settings', (event, settings) => {
+            if (settings) {
+                apiProviderSelect.value = settings.provider || '';
+                apiKeyInput.value = settings.apiKey || '';
+                if (settings.model) {
+                    selectedModel = settings.model;
+                }
+                updateApiInfo();
+            }
+        });
+
+        // Atualizar informações baseado no provedor
+        apiProviderSelect.addEventListener('change', updateApiInfo);
+
+        function updateApiInfo() {
+            const provider = apiProviderSelect.value;
+            if (provider === 'deepseek') {
+                apiInfo.textContent = 'Obtenha sua chave em: https://platform.deepseek.com/api_keys';
+            } else if (provider === 'groq') {
+                apiInfo.textContent = 'Obtenha sua chave em: https://console.groq.com/keys';
+            } else {
+                apiInfo.textContent = 'Digite sua chave de API do provedor selecionado';
+            }
+        }
+
+        // Testar API e buscar modelos
+        testApiBtn.addEventListener('click', async () => {
+            const provider = apiProviderSelect.value;
+            const apiKey = apiKeyInput.value.trim();
+
+            if (!provider) {
+                showStatus('Selecione um provedor de API', 'error');
+                return;
+            }
+
+            if (!apiKey) {
+                showStatus('Digite sua chave de API', 'error');
+                return;
+            }
+
+            showStatus('Testando conexão...', 'info');
+            testApiBtn.disabled = true;
+
+            try {
+                const result = await ipcRenderer.invoke('test-api-connection', { provider, apiKey });
+
+                if (result.success) {
+                    showStatus('✓ Conexão bem-sucedida! Modelos carregados.', 'success');
+                    availableModels = result.models;
+                    displayModels(result.models);
+                    modelsSection.style.display = 'block';
+                } else {
+                    showStatus('✗ Erro: ' + result.error, 'error');
+                    modelsSection.style.display = 'none';
+                }
+            } catch (error) {
+                showStatus('✗ Erro ao testar conexão: ' + error.message, 'error');
+                modelsSection.style.display = 'none';
+            } finally {
+                testApiBtn.disabled = false;
+            }
+        });
+
+        // Exibir modelos disponíveis
+        function displayModels(models) {
+            modelsList.innerHTML = '';
+
+            if (models.length === 0) {
+                modelsList.innerHTML = '<div class="loading">Nenhum modelo disponível</div>';
+                return;
+            }
+
+            models.forEach((model, index) => {
+                const modelDiv = document.createElement('div');
+                modelDiv.className = 'model-option';
+
+                const modelId = typeof model === 'string' ? model : model.id;
+                const isSelected = selectedModel === modelId;
+
+                modelDiv.innerHTML = `
+                    <label style="cursor: pointer; display: flex; align-items: center;">
+                        <input type="radio" name="model" value="${modelId}" ${isSelected ? 'checked' : ''}>
+                        <span>${modelId}</span>
+                    </label>
+                `;
+
+                modelDiv.querySelector('input').addEventListener('change', (e) => {
+                    selectedModel = e.target.value;
+                });
+
+                modelsList.appendChild(modelDiv);
+            });
+        }
+
+        // Salvar configurações
+        saveBtn.addEventListener('click', () => {
+            const provider = apiProviderSelect.value;
+            const apiKey = apiKeyInput.value.trim();
+
+            if (!provider || !apiKey) {
+                showStatus('Preencha todos os campos obrigatórios', 'error');
+                return;
+            }
+
+            if (!selectedModel) {
+                showStatus('Selecione um modelo antes de salvar', 'error');
+                return;
+            }
+
+            const settings = {
+                provider,
+                apiKey,
+                model: selectedModel
+            };
+
+            ipcRenderer.send('save-api-settings', settings);
+            showStatus('✓ Configurações salvas com sucesso!', 'success');
+            startChatBtn.style.display = 'block';
+        });
+
+        // Iniciar chat
+        startChatBtn.addEventListener('click', () => {
+            ipcRenderer.send('start-chat');
+        });
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message status-' + type;
+            statusMessage.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Carregar configurações ao iniciar
+        loadSettings();
+    </script>
+</body>
+</html>
