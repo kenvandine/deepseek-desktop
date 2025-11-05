@@ -1,40 +1,197 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checking network status - DeepSeek</title>
-    <script src="renderer.js"></script>
+    <title>DeepSeek Desktop</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Ubuntu, Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
-            background: #f3f2f1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #323130;
         }
+
         .container {
             text-align: center;
-            padding: 20px;
-            background: #f3f2f0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
+            padding: 50px;
+            background: white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
         }
+
         h1 {
-            font-size: 2em;
-            color: #000000;
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 20px;
         }
-        p {
-            margin: 20px 0;
+
+        .subtitle {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-web {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-web:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .status {
+            margin-top: 30px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Checking Network Status...</h1>
+        <div class="icon">🤖</div>
+        <h1>DeepSeek Desktop</h1>
+        <p class="subtitle">Escolha como deseja usar a aplicação</p>
+
+        <div class="buttons">
+            <button id="apiChatBtn" class="btn-primary">
+                💬 Chat com API
+            </button>
+            <button id="configBtn" class="btn-secondary">
+                ⚙️ Configurar API
+            </button>
+            <button id="webBtn" class="btn-web">
+                🌐 Usar Web Interface (DeepSeek)
+            </button>
+        </div>
+
+        <div id="status" class="status"></div>
     </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        const apiChatBtn = document.getElementById('apiChatBtn');
+        const configBtn = document.getElementById('configBtn');
+        const webBtn = document.getElementById('webBtn');
+        const status = document.getElementById('status');
+
+        let apiSettings = null;
+
+        // Carregar configurações
+        ipcRenderer.send('get-api-settings');
+
+        ipcRenderer.on('api-settings', (event, settings) => {
+            apiSettings = settings;
+            updateButtonStates();
+        });
+
+        function updateButtonStates() {
+            if (!apiSettings || !apiSettings.provider || !apiSettings.apiKey) {
+                apiChatBtn.disabled = true;
+                showStatus('Configure a API antes de usar o chat', 'info');
+            } else {
+                apiChatBtn.disabled = false;
+                showStatus('✓ API configurada: ' + apiSettings.provider.toUpperCase(), 'success');
+            }
+        }
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = 'status ' + type;
+            status.style.display = 'block';
+        }
+
+        apiChatBtn.addEventListener('click', () => {
+            if (apiSettings && apiSettings.provider) {
+                ipcRenderer.send('start-chat');
+            }
+        });
+
+        configBtn.addEventListener('click', () => {
+            ipcRenderer.send('open-settings');
+        });
+
+        webBtn.addEventListener('click', () => {
+            ipcRenderer.send('load-web-interface');
+        });
+
+        // Carregar configurações ao iniciar
+        updateButtonStates();
+    </script>
 </body>
 </html>
