@@ -227,7 +227,7 @@ function createWindow () {
     }
 
     // Different http(s) host: open in the default browser
-    shell.openExternal(url);
+    shell.openExternal(parsedUrl.toString());
     return { action: 'deny' }
   });
 
