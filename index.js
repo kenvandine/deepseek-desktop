@@ -8,6 +8,13 @@ let wasOffline = false;
 const appURL = 'https://chat.deepseek.com'
 const icon = nativeImage.createFromPath(join(__dirname, 'icon.png'));
 
+// Hosts allowed to navigate within the Electron window (defined once, shared with preload)
+const allowedHosts = new Set([
+  'chat.deepseek.com',
+  'deepseek.com',
+  'login.deepseek.com',
+]);
+
 // IPC listeners (registered once, outside createWindow to avoid leaks)
 ipcMain.on('zoom-in', () => {
   console.log('zoom-in');
@@ -33,8 +40,28 @@ ipcMain.on('log-message', (event, message) => {
 // Open links with default browser
 ipcMain.on('open-external-link', (event, url) => {
   console.log('open-external-link: ', url);
-  if (url) {
-    shell.openExternal(url);
+
+  // Validate URL and restrict to http/https protocols before opening
+  if (typeof url !== 'string' || url.trim() === '') {
+    console.warn('open-external-link: invalid URL type or empty string');
+    return;
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch (e) {
+    console.warn('open-external-link: malformed URL, refusing to open:', url);
+    return;
+  }
+
+  if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+    shell.openExternal(parsed.toString());
+  } else {
+    console.warn(
+      'open-external-link: blocked non-http(s) protocol:',
+      parsed.protocol
+    );
   }
 });
 
@@ -56,6 +83,11 @@ ipcMain.on('network-status', (event, isOnline) => {
     wasOffline = true;
     win.loadFile('offline.html');
   }
+});
+
+// Provide allowed hosts configuration to preload script
+ipcMain.handle('get-allowed-hosts', () => {
+  return Array.from(allowedHosts);
 });
 
 function createWindow () {
@@ -120,23 +152,45 @@ function createWindow () {
 
   win.loadURL(appURL);
 
-  // Show offline page if the URL fails to load (e.g. no internet)
-  win.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+  // Show offline page if the URL fails to load (e.g. no internet) on main frame only
+  win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
     console.log(`did-fail-load: ${errorDescription} (${errorCode})`);
+
+    // Ignore failures for subframes/resources; only react to main-frame failures
+    if (!isMainFrame) {
+      return;
+    }
+
+    // Ignore user/navigation aborts (e.g. ERR_ABORTED / -3) to avoid false offline redirects
+    if (errorCode === -3) { // ERR_ABORTED
+      return;
+    }
+
     wasOffline = true;
     win.loadFile('offline.html');
   });
 
-  // Hosts allowed to navigate within the Electron window
-  const allowedHosts = new Set([
-    'chat.deepseek.com',
-    'deepseek.com',
-    'login.deepseek.com',
-  ]);
-
   // Intercept navigation and only allow app + auth hosts in-app
   win.webContents.on('will-navigate', (event, url) => {
-    const targetHost = new URL(url).host;
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (e) {
+      // If URL parsing fails, deny navigation
+      console.warn('Invalid URL in will-navigate, blocking:', url, e);
+      event.preventDefault();
+      return;
+    }
+
+    const protocol = parsedUrl.protocol;
+    if (protocol !== 'http:' && protocol !== 'https:') {
+      // Only allow http/https URLs
+      console.log('Blocked non-http(s) URL in will-navigate:', url);
+      event.preventDefault();
+      return;
+    }
+
+    const targetHost = parsedUrl.host;
     if (!allowedHosts.has(targetHost)) {
       console.log('will-navigate external: ', url);
       event.preventDefault();
@@ -148,16 +202,32 @@ function createWindow () {
   // app host in-app; everything else opens in the default browser
   win.webContents.setWindowOpenHandler(({url}) => {
     console.log('windowOpenHandler: ', url);
+    let parsedUrl;
     try {
-      const host = new URL(url).host;
-      if (host === new URL(appURL).host) {
-        win.loadURL(url);
-        return { action: 'deny' };
-      }
+      parsedUrl = new URL(url);
     } catch (e) {
-      // If URL parsing fails, open externally
+      // If URL parsing fails, deny the request and do not open externally
+      console.warn('Invalid URL in windowOpenHandler, denying:', url, e);
+      return { action: 'deny' };
     }
-    shell.openExternal(url);
+
+    const protocol = parsedUrl.protocol;
+    if (protocol !== 'http:' && protocol !== 'https:') {
+      // Only allow http/https URLs to be opened
+      console.log('Blocked non-http(s) URL in windowOpenHandler:', url);
+      return { action: 'deny' };
+    }
+
+    const host = parsedUrl.host;
+    const appHost = new URL(appURL).host;
+    if (host === appHost) {
+      // Same host as the main app: load in this window
+      win.loadURL(url);
+      return { action: 'deny' };
+    }
+
+    // Different http(s) host: open in the default browser
+    shell.openExternal(parsedUrl.toString());
     return { action: 'deny' }
   });
 

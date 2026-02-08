@@ -9,21 +9,28 @@ window.addEventListener('online', updateNetworkStatus);
 window.addEventListener('offline', updateNetworkStatus);
 
 // Listen for DOMContentLoaded event
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
     // Wire up retry button on offline page
-    const retryBtn = document.getElementById('retry-btn');
+    const retryBtn = document.getElementById('retry-btn') || document.querySelector('.retry-btn');
     if (retryBtn) {
-        retryBtn.addEventListener('click', () => {
+        // Ensure any inline onclick (e.g., page reload) does not override IPC-based retry
+        retryBtn.removeAttribute('onclick');
+        retryBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
             ipcRenderer.send('retry-connection');
         });
     }
 
-    // Hosts allowed to navigate within the Electron window
-    const allowedHosts = new Set([
-        'chat.deepseek.com',
-        'deepseek.com',
-        'login.deepseek.com',
-    ]);
+    // Fetch allowed hosts from main process to avoid duplication
+    let allowedHosts = new Set();
+    try {
+        const hosts = await ipcRenderer.invoke('get-allowed-hosts');
+        allowedHosts = new Set(hosts);
+    } catch (e) {
+        console.error('Failed to fetch allowed hosts:', e);
+        // Fallback to empty set if fetch fails
+    }
 
     // Listen for click events and open non-allowed links externally
     document.addEventListener('click', (event) => {
