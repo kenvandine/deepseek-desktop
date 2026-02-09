@@ -31,7 +31,7 @@ jobs:
           # Run the screenshot script with Electron using xvfb-run
           # xvfb-run automatically starts and manages Xvfb
           # --no-sandbox is required for running Electron in CI environments
-          SCREENSHOT_PATH=screenshot.png xvfb-run -a npx electron --no-sandbox screenshot.js
+          TEST_SCREENSHOT=1 SCREENSHOT_PATH=screenshot.png xvfb-run -a npx electron --no-sandbox .
           
           # Verify screenshot was created
           ls -lh screenshot.png
