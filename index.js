@@ -147,6 +147,12 @@ function createWindow () {
 
   win.removeMenu();
 
+  // Use a standard Chrome user-agent to avoid bot detection warnings from DeepSeek
+  const chromeVersion = process.versions.chrome;
+  win.webContents.setUserAgent(
+    `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`
+  );
+
   win.on('close', (event) => {
     if (isScreenshotMode) return;
     event.preventDefault();
