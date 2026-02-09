@@ -1,4 +1,7 @@
-const { ipcRenderer } = require('electron');
+const { ipcRenderer, webFrame } = require('electron');
+
+// Hide Google and Apple sign-in buttons since they don't work in Electron
+webFrame.insertCSS('.ds-sign-in-form__social-buttons { display: none !important; }');
 
 // Network status detection
 function updateNetworkStatus() {

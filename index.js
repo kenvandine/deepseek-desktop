@@ -14,6 +14,14 @@ const snapUserData = process.env.SNAP_USER_DATA
 const isScreenshotMode = process.env.TEST_SCREENSHOT === '1';
 const screenshotPath = process.env.SCREENSHOT_PATH || 'screenshot.png';
 
+// Use a standard Chrome user-agent to avoid bot/embedded-browser detection
+const chromeVersion = process.versions.chrome;
+const standardUA = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`;
+app.userAgentFallback = standardUA;
+
+// Remove navigator.webdriver flag that marks this as an automated browser
+app.commandLine.appendSwitch('disable-blink-features', 'AutomationControlled');
+
 function initializeAutostart() {
   if (fs.existsSync(snapUserData + '/.config/autostart/deepseek-desktop.desktop')) {
     console.log('Autostart file exists')
@@ -147,12 +155,6 @@ function createWindow () {
 
   win.removeMenu();
 
-  // Use a standard Chrome user-agent to avoid bot detection warnings from DeepSeek
-  const chromeVersion = process.versions.chrome;
-  win.webContents.setUserAgent(
-    `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`
-  );
-
   win.on('close', (event) => {
     if (isScreenshotMode) return;
     event.preventDefault();
@@ -260,14 +262,13 @@ function createWindow () {
     }
 
     const host = parsedUrl.host;
-    const appHost = new URL(appURL).host;
-    if (host === appHost) {
-      // Same host as the main app: load in this window
+    if (allowedHosts.has(host)) {
+      // Allowed host: load in this window
       win.loadURL(url);
       return { action: 'deny' };
     }
 
-    // Different http(s) host: open in the default browser
+    // External host: open in the default browser
     shell.openExternal(parsedUrl.toString());
     return { action: 'deny' }
   });
