@@ -44,8 +44,10 @@ parts:
       mkdir -p $SNAPCRAFT_PART_INSTALL/unpacked
       cp $SNAPCRAFT_PROJECT_DIR/com.github.kenvandine.deepseek-desktop.desktop $SNAPCRAFT_PART_INSTALL/unpacked/
       cp $SNAPCRAFT_PROJECT_DIR/icon.png $SNAPCRAFT_PART_INSTALL/
-      mv dist/linux*-unpacked/* $SNAPCRAFT_PART_INSTALL/unpacked 
+      mv dist/linux*-unpacked/* $SNAPCRAFT_PART_INSTALL/unpacked
+      cp $SNAPCRAFT_PROJECT_DIR/com.github.kenvandine.deepseek-desktop-autostart.desktop $SNAPCRAFT_PART_INSTALL/
     prime:
+      - com.github.kenvandine.deepseek-desktop*.desktop
       - unpacked
       - icon.png
       - -*/chrome-sandbox
@@ -77,6 +79,7 @@ apps:
   deepseek-desktop:
     extensions: [gnome]
     desktop: unpacked/com.github.kenvandine.deepseek-desktop.desktop
+    autostart: deepseek-desktop.desktop
     command: launcher
     plugs:
       - audio-playback
