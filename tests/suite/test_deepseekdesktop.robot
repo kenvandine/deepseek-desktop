@@ -5,6 +5,6 @@ Resource         kvm.resource
 
 *** Test Cases ***
 DeepSeek Desktop Launches And Renders
-    [Documentation]    Verify deepseek-desktop snap launches and renders a UI on Mir
+    [Documentation]    Verify deepseek-desktop snap launches and renders a UI on a real GNOME desktop session (no Mir compositor or VNC required)
     [Tags]    smoke    yarf:certification_status: blocker
     Log Screenshot
