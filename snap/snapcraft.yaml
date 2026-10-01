@@ -32,9 +32,12 @@ parts:
       - git
     override-pull: |
       craftctl default
-      VERSION=$(craftctl get version)
-      if [ -z $VERSION ]; then
-        VERSION=$(git describe --tags --abbrev=10)
+      # Get version from package.json or git tag
+      VERSION=$(grep -o '"version": *"[^"']*"' package.json | cut -d '"' -f 4)
+      if [ -z "$VERSION" ]; then
+        VERSION=$(git describe --tags --abbrev=10 2>/dev/null || echo "0.0.0")
+        craftctl set version=$VERSION
+      else
         craftctl set version=$VERSION
       fi
       sed -i.bak -e "s|@@VERSION@@|$VERSION|g" $CRAFT_PART_SRC/package.json
@@ -44,7 +47,13 @@ parts:
       mkdir -p $SNAPCRAFT_PART_INSTALL/unpacked
       cp $SNAPCRAFT_PROJECT_DIR/com.github.kenvandine.deepseek-desktop.desktop $SNAPCRAFT_PART_INSTALL/unpacked/
       cp $SNAPCRAFT_PROJECT_DIR/icon.png $SNAPCRAFT_PART_INSTALL/
-      mv dist/linux*-unpacked/* $SNAPCRAFT_PART_INSTALL/unpacked
+      # Move the built app to the correct location
+      if [ -d "dist/linux*-unpacked" ]; then
+        mv dist/linux*-unpacked/* $SNAPCRAFT_PART_INSTALL/unpacked
+      else
+        echo "Error: No built app found in dist/"
+        exit 1
+      fi
       cp $SNAPCRAFT_PROJECT_DIR/com.github.kenvandine.deepseek-desktop-autostart.desktop $SNAPCRAFT_PART_INSTALL/
     prime:
       - com.github.kenvandine.deepseek-desktop*.desktop
