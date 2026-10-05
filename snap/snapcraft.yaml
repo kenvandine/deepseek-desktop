@@ -41,14 +41,14 @@ parts:
     override-build: |
       npm install
       npm run build
-      mkdir -p $SNAPCRAFT_PART_INSTALL/unpacked
-      cp $SNAPCRAFT_PROJECT_DIR/com.github.kenvandine.deepseek-desktop.desktop $SNAPCRAFT_PART_INSTALL/unpacked/
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/deepseek-desktop
+      cp $SNAPCRAFT_PROJECT_DIR/com.github.kenvandine.deepseek-desktop.desktop $SNAPCRAFT_PART_INSTALL/usr/share/deepseek-desktop/
       cp $SNAPCRAFT_PROJECT_DIR/icon.png $SNAPCRAFT_PART_INSTALL/
-      mv dist/linux*-unpacked/* $SNAPCRAFT_PART_INSTALL/unpacked
-      cp $SNAPCRAFT_PROJECT_DIR/com.github.kenvandine.deepseek-desktop-autostart.desktop $SNAPCRAFT_PART_INSTALL/
+      mv dist/linux*-unpacked/* $SNAPCRAFT_PART_INSTALL/usr/share/deepseek-desktop/
+      cp $SNAPCRAFT_PROJECT_DIR/com.github.kenvandine.deepseek-desktop-autostart.desktop $SNAPCRAFT_PART_INSTALL/usr/share/deepseek-desktop/
     prime:
-      - com.github.kenvandine.deepseek-desktop*.desktop
-      - unpacked
+      - usr/share/deepseek-desktop/com.github.kenvandine.deepseek-desktop*.desktop
+      - usr/share/deepseek-desktop
       - icon.png
       - -*/chrome-sandbox
       - -*/resources/app.asar.unpacked/node_modules/sharp/vendor/lib
@@ -78,7 +78,7 @@ plugs:
 apps:
   deepseek-desktop:
     extensions: [gnome]
-    desktop: unpacked/com.github.kenvandine.deepseek-desktop.desktop
+    desktop: usr/share/deepseek-desktop/com.github.kenvandine.deepseek-desktop.desktop
     autostart: deepseek-desktop.desktop
     command: launcher
     plugs:
