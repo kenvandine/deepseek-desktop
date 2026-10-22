@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checking network status - DeepSeek</title>
+    <title>DeepSeek - Unofficial Desktop App</title>
     <script src="renderer.js"></script>
     <style>
         body {
@@ -15,6 +15,7 @@
             margin: 0;
             background: #f3f2f1;
             color: #323130;
+            position: relative;
         }
         .container {
             text-align: center;
@@ -22,6 +23,7 @@
             background: #f3f2f0;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             border-radius: 8px;
+            position: relative;
         }
         h1 {
             font-size: 2em;
@@ -30,11 +32,43 @@
         p {
             margin: 20px 0;
         }
+        #search-container {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            display: none;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        #search-input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        #search-close {
+            margin-left: 5px;
+            padding: 5px 10px;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        #search-close:hover {
+            background: #e0e0e0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Checking Network Status...</h1>
+        <h1>DeepSeek Desktop App</h1>
+        <p>Loading...</p>
+        <div id="search-container">
+            <input type="text" id="search-input" placeholder="Search...">
+            <button id="search-close">×</button>
+        </div>
     </div>
 </body>
 </html>
