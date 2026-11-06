@@ -1,40 +1,28 @@
 {
   "name": "deepseek-desktop",
-  "title": "DeepSeek Desktop",
+  "productName": "DeepSeek Desktop",
   "version": "@@VERSION@@",
-  "description": "Unofficial Web app for DeepSeek providing the desktop user experience you would expect on Ubuntu or any other Linux desktop.",
+  "description": "Unofficial Web app for DeepSeek providing the desktop user experience you would expect on Ubuntu or any other Linux desktop",
   "main": "index.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --publish never",
-    "screenshot": "TEST_SCREENSHOT=1 electron ."
-  },
-  "build": {
-    "asar": false,
-    "linux": {
-      "target": [
-	      "dir"
-      ],
-      "category": "Utility",
-      "artifactName": "${name}_${version}_linux.${ext}"
-    },
-    "extraFiles": [
-      "com.github.kenvandine.${name}.desktop"
-    ]
+    "build": "electron-builder --linux dir"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kenvandine/deepseek-desktop.git"
+    "url": "https://github.com/kenvandine/deepseek-desktop.git"
   },
-  "author": "Ken VanDine",
-  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/kenvandine/deepseek-desktop/issues"
   },
   "homepage": "https://github.com/kenvandine/deepseek-desktop#readme",
+  "author": "Ken VanDine <ken.vandine@canonical.com>",
+  "license": "GPL-3.0+",
+  "dependencies": {
+    "sharp": "^0.34.4"
+  },
   "devDependencies": {
-    "electron": "^40.2.1",
-    "electron-builder": "^26.7.0",
-    "electron-package": "^0.1.0"
+    "electron": "45.2.3",
+    "electron-builder": "26.18.0"
   }
 }
